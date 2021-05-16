@@ -1,4 +1,4 @@
-const canvas = document.querySelector("canvas");
+const canvas = document.getElementById("triangle");
 const gl = canvas.getContext("webgl");
 
 if (!gl) {
