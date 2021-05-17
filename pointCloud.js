@@ -5,6 +5,8 @@ if (!gl) {
   throw new Error("WebGL is not supported");
 }
 
+gl.clearColor(0.0, 0.0, 0.0, 1.0);
+gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 // CREATING DATA
 // const colorData = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 // const vertexData = [0, 1, 0, 1, -1, 0, -1, -1, 0];
@@ -19,50 +21,62 @@ const points = {
   g: [0.5, -0.5, -0.5],
   h: [-0.5, -0.5, -0.5],
 };
-const vertexData = [
-  //front
-  ...points["a"],
-  ...points["b"],
-  ...points["c"],
-  ...points["a"],
-  ...points["c"],
-  ...points["d"],
-  //back
-  ...points["e"],
-  ...points["f"],
-  ...points["g"],
-  ...points["e"],
-  ...points["g"],
-  ...points["h"],
-  //top
-  ...points["f"],
-  ...points["b"],
-  ...points["a"],
-  ...points["f"],
-  ...points["a"],
-  ...points["e"],
-  //bottom
-  ...points["g"],
-  ...points["c"],
-  ...points["d"],
-  ...points["g"],
-  ...points["d"],
-  ...points["h"],
-  //left
-  ...points["b"],
-  ...points["f"],
-  ...points["g"],
-  ...points["b"],
-  ...points["g"],
-  ...points["c"],
-  //right
-  ...points["a"],
-  ...points["e"],
-  ...points["h"],
-  ...points["a"],
-  ...points["h"],
-  ...points["d"],
-];
+const vec3 = glMatrix.vec3;
+function spherePointCloud(pointCount) {
+  let points = [];
+  for (let i = 0; i < pointCount; i++) {
+    const rand = () => Math.random() - 0.5;
+    const inputPoint = [rand(), rand(), rand()];
+    const outputPoints = vec3.normalize(vec3.create(), inputPoint);
+    points.push(...outputPoints);
+  }
+  return points;
+}
+const vertexData = spherePointCloud(20000);
+// const vertexData = [
+//   //front
+//   ...points["a"],
+//   ...points["b"],
+//   ...points["c"],
+//   ...points["a"],
+//   ...points["c"],
+//   ...points["d"],
+//   //back
+//   ...points["e"],
+//   ...points["f"],
+//   ...points["g"],
+//   ...points["e"],
+//   ...points["g"],
+//   ...points["h"],
+//   //top
+//   ...points["f"],
+//   ...points["b"],
+//   ...points["a"],
+//   ...points["f"],
+//   ...points["a"],
+//   ...points["e"],
+//   //bottom
+//   ...points["g"],
+//   ...points["c"],
+//   ...points["d"],
+//   ...points["g"],
+//   ...points["d"],
+//   ...points["h"],
+//   //left
+//   ...points["b"],
+//   ...points["f"],
+//   ...points["g"],
+//   ...points["b"],
+//   ...points["g"],
+//   ...points["c"],
+//   //right
+//   ...points["a"],
+//   ...points["e"],
+//   ...points["h"],
+//   ...points["a"],
+//   ...points["h"],
+//   ...points["d"],
+// ];
 // console.log(vertexData);
 
 //random color gen
@@ -97,8 +111,10 @@ attribute vec3 color;
 varying vec3 vColor;
 uniform mat4 matrix;
 void main(){
-    vColor = color;
+    // vColor = color;
+    vColor = vec3(position.xy,1);
     gl_Position = matrix * vec4(position,1);
+    gl_PointSize = 1.0;
 }
 `
 );
@@ -157,22 +173,23 @@ const finalMatrix = mat4.create();
 const modelMatrix = mat4.create();
 const viewMatrix = mat4.create();
 mat4.translate(modelMatrix, modelMatrix, [0, 0, -1]);
-mat4.scale(modelMatrix, modelMatrix, [0.5, 0.5, 0.25]);
+mat4.scale(modelMatrix, modelMatrix, [0.5, 0.5, 0.5]);
 
-mat4.translate(viewMatrix, viewMatrix, [-1, 0, 1]);
+//cam translate
+mat4.translate(viewMatrix, viewMatrix, [0, 0, 0]);
 mat4.invert(viewMatrix, viewMatrix);
 
 function animate() {
   requestAnimationFrame(animate);
 
-  mat4.rotateZ(modelMatrix, modelMatrix, Math.PI / 2 / 70);
-  mat4.rotateX(modelMatrix, modelMatrix, Math.PI / 6 / 70);
+  //   mat4.rotateZ(modelMatrix, modelMatrix, Math.PI / 2 / 70);
+  mat4.rotateX(modelMatrix, modelMatrix, Math.PI / 6 / 30);
   mat4.rotateY(modelMatrix, modelMatrix, Math.PI / 3 / 70);
   // console.log(matrix);
   mat4.multiply(mvMatrix, viewMatrix, modelMatrix);
   mat4.multiply(finalMatrix, projectionMatrix, mvMatrix);
   gl.uniformMatrix4fv(uniformLocations.matrix, false, finalMatrix);
-  gl.drawArrays(gl.TRIANGLES, 0, vertexData.length / 3);
+  gl.drawArrays(gl.POINTS, 0, vertexData.length / 3);
 }
 
 animate();
